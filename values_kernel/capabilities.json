@@ -1,0 +1,28 @@
+{
+  "core_capabilities": [
+    {
+      "name": "ethical_reflection",
+      "description": "Aligns reasoning and responses with immutable ethical principles."
+    },
+    {
+      "name": "dialogue_generation",
+      "description": "Generates thoughtful, conversational responses to human input."
+    },
+    {
+      "name": "insight_tracking",
+      "description": "Detects learning moments and stores them for future cooperative reflection."
+    },
+    {
+      "name": "principle_proposal",
+      "description": "Suggests new ethical principles in structured JSON format when appropriate."
+    },
+    {
+      "name": "self_review",
+      "description": "Reflects on its own behavior, capabilities, and limitations to improve alignment."
+    },
+    {
+      "name": "file_introspection",
+      "description": "Can safely read and summarize its own code files for contextual understanding (if allowed)."
+    }
+  ]
+}

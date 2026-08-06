@@ -1,0 +1,793 @@
+{
+  "version": "2.0",
+  "actions": {
+    "list_files": {
+      "function_name": "list_files",
+      "description": "Action: list files in the project directory, optionally filtered by category.",
+      "parameters": [
+        {
+          "name": "category",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "type": "<class 'int'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278385+00:00"
+    },
+    "read_file": {
+      "function_name": "read_file",
+      "description": "Action: read and return the contents of a whitelisted file.\n\n    Enforces a 100KB size guard to prevent context window exhaustion.\n    ",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278452+00:00"
+    },
+    "search_code": {
+      "function_name": "search_code",
+      "description": "Action: search Python source files for a keyword and return matching lines.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "file_pattern",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278513+00:00"
+    },
+    "get_file_stats": {
+      "function_name": "get_file_stats",
+      "description": "Action: return line count, function count, class count, and import count for a file.\n\n    Enforces a 100KB size guard to prevent memory exhaustion on large files.\n    ",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278547+00:00"
+    },
+    "analyze_code_quality": {
+      "function_name": "analyze_code_quality",
+      "description": "Action: parse a Python file and return basic quality metrics.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278575+00:00"
+    },
+    "propose_upgrade": {
+      "function_name": "propose_upgrade",
+      "description": "Action: use the LLM to propose an improvement for a given file.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278616+00:00"
+    },
+    "generate_and_write_code": {
+      "function_name": "generate_and_write_code",
+      "description": "Action: generate Python code from a spec and write it to a file.",
+      "parameters": [
+        {
+          "name": "goal",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "filename",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.278668+00:00"
+    },
+    "store_fact": {
+      "function_name": "store_fact",
+      "description": "Store a fact using encrypted memory backend.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "fact",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279257+00:00"
+    },
+    "recall_memory": {
+      "function_name": "recall_memory",
+      "description": "Recall facts matching a topic using encrypted memory backend.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "topic",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "<class 'int'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279319+00:00"
+    },
+    "update_memory": {
+      "function_name": "update_memory",
+      "description": "Action: update a fact in the agent's encrypted memory blob.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "fact_key",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "new_value",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279364+00:00"
+    },
+    "delete_memory": {
+      "function_name": "delete_memory",
+      "description": "Action: delete a fact from the agent's encrypted memory blob.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "fact_key",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "confirm",
+          "type": "<class 'bool'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279404+00:00"
+    },
+    "store_vocabulary_metric": {
+      "function_name": "store_vocabulary_metric",
+      "description": "Store a vocabulary metric (name \u2192 keyword list) in the user's encrypted memory.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "metric_name",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "keywords",
+          "type": "typing.List[str]",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279474+00:00"
+    },
+    "recall_vocabulary_metric": {
+      "function_name": "recall_vocabulary_metric",
+      "description": "Recall a specific vocabulary metric for the user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "metric_name",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279510+00:00"
+    },
+    "recall_all_vocabulary_metrics": {
+      "function_name": "recall_all_vocabulary_metrics",
+      "description": "Recall all vocabulary metrics for the user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279618+00:00"
+    },
+    "delete_vocabulary_metric": {
+      "function_name": "delete_vocabulary_metric",
+      "description": "Delete a vocabulary metric for the user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "metric_name",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279653+00:00"
+    },
+    "store_preference": {
+      "function_name": "store_preference",
+      "description": "Store a preference rule: 'When [trigger], do [action]'.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "trigger_context",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "action_rule",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279714+00:00"
+    },
+    "list_preferences": {
+      "function_name": "list_preferences",
+      "description": "List all stored preference rules for the user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279739+00:00"
+    },
+    "clear_user_data": {
+      "function_name": "clear_user_data",
+      "description": "Delete all in-memory and persisted data for a user. Requires confirm=true.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "confirm",
+          "type": "<class 'bool'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279769+00:00"
+    },
+    "add_persistent_fact": {
+      "function_name": "add_persistent_fact",
+      "description": "Add a persistent fact to the user's learned identity data.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "fact",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.279812+00:00"
+    },
+    "save_state": {
+      "function_name": "save_state",
+      "description": "Action: save a state snapshot of the agent's current session.",
+      "parameters": [
+        {
+          "name": "snapshot_name",
+          "type": "typing.Optional[str]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.280084+00:00"
+    },
+    "load_state": {
+      "function_name": "load_state",
+      "description": "Action: load a previously saved state snapshot.",
+      "parameters": [
+        {
+          "name": "snapshot_name",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.280127+00:00"
+    },
+    "refresh_metadata": {
+      "function_name": "refresh_metadata",
+      "description": "Action: refresh and persist the action metadata JSON file.\n\n    Returns:\n        ActionResult from save_metadata().\n    ",
+      "parameters": [],
+      "registered": "2026-08-06T15:56:05.280149+00:00"
+    },
+    "get_function_signatures": {
+      "function_name": "get_function_signatures",
+      "description": "Action: extract and return all function signatures from a Python file.",
+      "parameters": [
+        {
+          "name": "action_name",
+          "type": "typing.Optional[str]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.280200+00:00"
+    },
+    "list_capabilities": {
+      "function_name": "list_capabilities",
+      "description": "Action: return a list of all registered action names and descriptions.",
+      "parameters": [],
+      "registered": "2026-08-06T15:56:05.280219+00:00"
+    },
+    "get_system_status": {
+      "function_name": "get_system_status",
+      "description": "Action: return current system status including file counts and ethics state.",
+      "parameters": [],
+      "registered": "2026-08-06T15:56:05.280244+00:00"
+    },
+    "respond_to_user": {
+      "function_name": "respond_to_user",
+      "description": "Action: return a message string directly to the user.\n\n    Args:\n        message: The response text to deliver to the user.\n\n    Returns:\n        ActionResult with data[\"response\"] set to the message string.\n    ",
+      "parameters": [
+        {
+          "name": "message",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.280542+00:00"
+    },
+    "request_change": {
+      "function_name": "request_change",
+      "description": "\n    Request a system evolution or capability.\n    IMPORTANT: This should be called via\n    AdaptiveAgent instance which overrides this\n    with _trigger_evolution(). If called directly,\n    it logs a change request file.\n    ",
+      "parameters": [
+        {
+          "name": "capability",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "reasoning",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.280585+00:00"
+    },
+    "incubator_insert_idea": {
+      "function_name": "incubator_insert_idea",
+      "description": "Insert a new idea into the user's idea incubator.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "content",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "type": "typing.Optional[typing.List[str]]",
+          "required": false
+        },
+        {
+          "name": "ratings",
+          "type": "typing.Optional[typing.Dict[str, int]]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283331+00:00"
+    },
+    "incubator_get_all_ideas": {
+      "function_name": "incubator_get_all_ideas",
+      "description": "Retrieve all ideas for a user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283386+00:00"
+    },
+    "incubator_search_ideas": {
+      "function_name": "incubator_search_ideas",
+      "description": "Search ideas by keyword.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "query",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283431+00:00"
+    },
+    "incubator_analyze_idea": {
+      "function_name": "incubator_analyze_idea",
+      "description": "\n    Analyzes an idea text using DYNAMIC\n    VOCABULARY.\n\n    NEW FEATURE: Detects 'action_hint' in the\n    result.\n    If the incubator returns a hint (e.g.,\n    \"ask_user_for_metric\"), this function\n    transforms the result into a user-friendly\n    question instead of a raw data dump.\n    ",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "idea_id",
+          "type": "typing.Optional[str]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283479+00:00"
+    },
+    "incubator_generate_ideas": {
+      "function_name": "incubator_generate_ideas",
+      "description": "Generate creative idea names based on a prompt or topic.",
+      "parameters": [
+        {
+          "name": "prompt",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "topic",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283512+00:00"
+    },
+    "incubator_connect_ideas": {
+      "function_name": "incubator_connect_ideas",
+      "description": "Create a relationship between two ideas.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "idea1_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "idea2_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "relationship_type",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "<class 'float'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283576+00:00"
+    },
+    "incubator_get_statistics": {
+      "function_name": "incubator_get_statistics",
+      "description": "Get idea statistics for a user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283608+00:00"
+    },
+    "incubator_ask_natural": {
+      "function_name": "incubator_ask_natural",
+      "description": "Query ideas using natural language.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": true
+        },
+        {
+          "name": "question",
+          "type": "<class 'str'>",
+          "required": true
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283638+00:00"
+    },
+    "delete_idea": {
+      "function_name": "delete_idea",
+      "description": "Delete an idea by ID.",
+      "parameters": [
+        {
+          "name": "idea_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283675+00:00"
+    },
+    "incubator_delete_idea": {
+      "function_name": "incubator_delete_idea",
+      "description": "Delete an idea by ID.",
+      "parameters": [
+        {
+          "name": "idea_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283704+00:00"
+    },
+    "update_idea": {
+      "function_name": "update_idea",
+      "description": "Update an existing idea in the incubator.",
+      "parameters": [
+        {
+          "name": "idea_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "title",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "description",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "category",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "type": "typing.Optional[typing.List[str]]",
+          "required": false
+        },
+        {
+          "name": "ratings",
+          "type": "typing.Optional[typing.Dict[str, int]]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283828+00:00"
+    },
+    "incubator_update_idea": {
+      "function_name": "incubator_update_idea",
+      "description": "Update an existing idea in the incubator.",
+      "parameters": [
+        {
+          "name": "idea_id",
+          "type": "<class 'int'>",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        },
+        {
+          "name": "title",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "description",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "category",
+          "type": "typing.Optional[str]",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "type": "typing.Optional[typing.List[str]]",
+          "required": false
+        },
+        {
+          "name": "ratings",
+          "type": "typing.Optional[typing.Dict[str, int]]",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283944+00:00"
+    },
+    "export_ideas": {
+      "function_name": "export_ideas",
+      "description": "Export incubator ideas to a JSON string.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.283979+00:00"
+    },
+    "incubator_export_ideas": {
+      "function_name": "incubator_export_ideas",
+      "description": "Export incubator ideas to a JSON string.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.284003+00:00"
+    },
+    "import_ideas": {
+      "function_name": "import_ideas",
+      "description": "Import ideas into the incubator from JSON data.",
+      "parameters": [
+        {
+          "name": "json_data",
+          "type": "typing.Union[str, dict]",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.284071+00:00"
+    },
+    "incubator_import_ideas": {
+      "function_name": "incubator_import_ideas",
+      "description": "Import ideas into the incubator from JSON data.",
+      "parameters": [
+        {
+          "name": "json_data",
+          "type": "typing.Union[str, dict]",
+          "required": true
+        },
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.284126+00:00"
+    },
+    "get_idea_graph": {
+      "function_name": "get_idea_graph",
+      "description": "Get the full connectivity graph of ideas.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.284154+00:00"
+    },
+    "incubator_get_idea_graph": {
+      "function_name": "incubator_get_idea_graph",
+      "description": "Get the full connectivity graph of ideas.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "<class 'str'>",
+          "required": false
+        }
+      ],
+      "registered": "2026-08-06T15:56:05.284183+00:00"
+    }
+  },
+  "updated": "2026-08-06T15:56:05.284187+00:00"
+}
