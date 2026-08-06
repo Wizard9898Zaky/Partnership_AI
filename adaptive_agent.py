@@ -1970,6 +1970,162 @@ Return ONLY JSON in this exact format:
             "patch_generator_available": _PATCH_GENERATOR_AVAILABLE,
         }
 
+
+    # ═══════════════════════════════════════
+    # Capability Query Detection
+    # ═══════════════════════════════════════
+
+    # Phrases that indicate the user is asking about capabilities.
+    _CAPABILITY_QUERY_PHRASES = [
+        "what can you do",
+        "what are your capabilities",
+        "what are you capable of",
+        "what can you help with",
+        "what can you help me",
+        "what do you do",
+        "what are your features",
+        "what tools do you have",
+        "what actions can you take",
+        "what can partnership_ai do",
+        "what can the ai do",
+        "what can you handle",
+        "what are your abilities",
+        "what are you able to do",
+        "what functions do you have",
+        "what are your skills",
+        "what are you good at",
+        "tell me about your capabilities",
+        "tell me what you can do",
+        "show me your capabilities",
+        "list your capabilities",
+        "what can\b.*\bdo\b",
+        "how can you help",
+        "what are you",
+        "who are you",
+        "what is partnership",
+        "what is partnership_ai",
+    ]
+
+    def _is_capability_query(self, user_input: str) -> bool:
+        """
+        Detect whether the user is asking about the agent's capabilities.
+
+        Uses a combination of exact phrase matching and regex patterns
+        to catch natural variations like "what can you actually do for me"
+        or "what kind of things can you handle".
+
+        Args:
+            user_input: The raw user message.
+
+        Returns:
+            True if this looks like a capability query, False otherwise.
+        """
+        lowered = user_input.lower().strip()
+
+        # Quick exact-phrase check first (fast path)
+        for phrase in self._CAPABILITY_QUERY_PHRASES:
+            if phrase in lowered:
+                return True
+
+        # Regex fallback: "what can you ... do" pattern
+        if re.search(r"what\s+can\s+you\b.*\bdo\b", lowered):
+            return True
+
+        # "what are you" + "capab/able/do/help" within 60 chars
+        if "what are you" in lowered:
+            for keyword in ("capab", "able to", "help", "do for", "features"):
+                if keyword in lowered:
+                    return True
+
+        return False
+
+    def _build_capability_overview(self, user_input: str, session_history: str) -> str:
+        """
+        Build a rich, context-aware capabilities overview for the LLM.
+
+        Produces a factual system_override string that includes:
+        - All registered actions with descriptions and parameters
+        - The user's original question
+        - Recent conversation context (if any) so the LLM can highlight
+          capabilities relevant to what was just discussed
+        - Plugin status (if any plugins are loaded)
+
+        Args:
+            user_input:      The user's current message.
+            session_history: Recent conversation context.
+
+        Returns:
+            A string to pass to DialogueEngine as system_override.
+        """
+        # Build the full action list with descriptions
+        action_lines = []
+        try:
+            for name, meta in ACTION_METADATA.items():
+                desc = meta.get("description", "No description available")
+                params = meta.get("parameters", [])
+                param_str = ", ".join(
+                    p["name"]
+                    for p in params
+                ) if params else "none"
+                action_lines.append(f"  • {name}({param_str}) — {desc}")
+        except Exception:
+            action_lines.append("  (action metadata unavailable)")
+
+        actions_block = "\n".join(action_lines)
+
+        # Build conversation context hint
+        context_hint = ""
+        if session_history and session_history.strip():
+            # Extract last few user messages from session history
+            # to identify topics the user has been discussing
+            recent_user_msgs = []
+            for line in session_history.split("\n"):
+                if line.strip().startswith("USER:"):
+                    msg = line.strip()[5:].strip()[:200]
+                    if msg:
+                        recent_user_msgs.append(msg)
+            if recent_user_msgs:
+                context_hint = (
+                    f"\n\nRecent conversation context (the user has been discussing):\n"
+                    + "\n".join(f"  - {msg}" for msg in recent_user_msgs[-5:])
+                    + "\n\nWhen describing capabilities, highlight which ones are most "
+                    "relevant to what the user has been talking about, while still "
+                    "listing all available actions."
+                )
+
+        # Plugin info
+        plugin_hint = ""
+        try:
+            from conversation_engine.plugin_loader import get_plugin_status
+            statuses = get_plugin_status()
+            if statuses:
+                active = [name for name, active in statuses if active]
+                if active:
+                    plugin_hint = f"\n\nAdditional plugin capabilities: {', '.join(active)}"
+        except Exception:
+            pass
+
+        # Capability count
+        cap_count = len(ACTION_METADATA) if ACTION_METADATA else 0
+
+        overview = (
+            f"CAPABILITY OVERVIEW\n"
+            f"=====================\n"
+            f"The user asked: \"{user_input}\"\n"
+            f"You have {cap_count} registered actions available.\n\n"
+            f"Here are ALL your capabilities (action name, parameters, description):\n"
+            f"{actions_block}\n"
+            f"{plugin_hint}"
+            f"{context_hint}\n\n"
+            f"INSTRUCTIONS: Respond to the user naturally. List your capabilities in a "
+            f"clear, organized way. Group related actions together (e.g., file operations, "
+            f"memory, scheduling, web search, incubator, system tools). If the user has been "
+            f"discussing a specific topic, mention how your capabilities relate to that topic "
+            f"first, then cover the rest. Be conversational, not robotic. Don't just dump the "
+            f"list — explain what you can actually do for them."
+        )
+        return overview
+
     def run(self, user_input: str, session_history: str = "") -> Union[bool, str]:
         """
         Main entry point for processing a user request.
@@ -2023,6 +2179,16 @@ Return ONLY JSON in this exact format:
         logger.info("Processing: %s", user_input[:100])
         self._session_history = session_history   # store for prompt builders
         self._current_trace = TurnTrace(user_input)
+
+        # ── Capability query detection ────────────────────────────────
+        # Check before the intent gate so capability queries bypass the
+        # action/conversation classifier and get a rich, context-aware
+        # overview passed directly to DialogueEngine as system_override.
+        if self._is_capability_query(user_input):
+            overview = self._build_capability_overview(user_input, session_history)
+            self._current_trace.finish(overview, outcome="capability_query")
+            return overview
+
         try:
             analysis = self.analyze_goal_and_gap(user_input)
 
