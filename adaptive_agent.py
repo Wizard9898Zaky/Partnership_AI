@@ -722,35 +722,16 @@ class AdaptiveAgent:
         history_snippet = getattr(self, '_session_history', '').strip()
 
         # ── Stage 1: intent gate ──────────────────────────────────────────────
+        # The LLM reads the user's message in the context of the conversation
+        # and decides: does this require a tool (action) or not (conversation)?
+        # No tool lists, no special cases — just reasoning from context.
         gate_prompt = (
-            "Classify the user's request into exactly one word.\n"
-            "'action' — if the user wants to DO something using the system's tools. "
-            "This includes but is not limited to:\n"
-            "  - File operations: list_files, read_file, search_code, get_file_stats\n"
-            "  - Code operations: analyze_code_quality, propose_upgrade, generate_and_write_code\n"
-            "  - Memory operations: store_fact, recall_memory, update_memory, delete_memory, "
-            "store_vocabulary_metric, recall_vocabulary_metric, recall_all_vocabulary_metrics, "
-            "delete_vocabulary_metric\n"
-            "  - State operations: save_state, load_state, refresh_metadata, "
-            "get_function_signatures, list_capabilities, get_system_status\n"
-            "  - Change requests: request_change — use this when the user asks to MAKE, CREATE, "
-            "PROPOSE, SUBMIT, or FILE a change request, CR, patch, upgrade, modification, or "
-            "evolution. Also use it when the user asks the system to evolve, improve itself, or "
-            "change its own code.\n"
-            "  - Incubator: incubator_insert_idea, incubator_get_all_ideas, incubator_search_ideas, "
-            "incubator_analyze_idea, incubator_generate_ideas, incubator_connect_ideas, "
-            "incubator_get_statistics, incubator_ask_natural\n"
-            "  - Web: web_search, fetch_url\n"
-            "  - Scheduling: schedule_task, list_scheduled, cancel_task\n"
-            "  - File watching: watch_file, check_file_diff, list_watched\n"
-            "  - Communication: respond_to_user\n\n"
-            "IMPORTANT: If the user says 'make a change request', 'create a CR', 'propose a change', "
-            "'trigger evolution', 'make a patch', or anything similar, classify it as 'action' — "
-            "the request_change tool handles this.\n\n"
-            "'conversation' — only for questions, explanations, opinions, casual chat, or requests "
-            "that do not require any of the above tools.\n\n"
-            f"User: {user_goal}\n\n"
-            "Reply with one word only: conversation OR action"
+            "Based on what the user said and the conversation so far, "
+            "does this require the system to DO something (an action), "
+            "or is it just conversation?\n\n"
+            f"Conversation context: {history_snippet}\n\n"
+            f"User said: {user_goal}\n\n"
+            "Reply with one word only: action OR conversation"
         )
         gate_text, gate_usage = safe_llm_call(gate_prompt, max_tokens=10, return_usage=True)
         self._track_llm_call(gate_usage)
@@ -779,19 +760,6 @@ class AdaptiveAgent:
             "Available actions (name: required_params):\n"
             f"{action_menu}"
             f"{history_block}"
-            "\nKey action descriptions:\n"
-            "  request_change: Use when the user asks to make/create/propose/submit/file "
-            "a change request, CR, patch, upgrade, modification, or evolution. Pass the "
-            "capability name and the reasoning.\n"
-            "  respond_to_user: Use when the user asks a question or wants a response "
-            "and no other tool fits.\n"
-            "  incubator_get_all_ideas: Use when the user asks to list/show/get ideas "
-            "from the incubator.\n"
-            "  incubator_search_ideas: Use when the user asks to search for ideas.\n"
-            "  web_search: Use when the user wants to search the web.\n"
-            "  fetch_url: Use when the user wants to fetch/read a specific URL.\n"
-            "  store_fact: Use when the user wants to save/remember a fact.\n"
-            "  recall_memory: Use when the user wants to recall/retrieve memories.\n"
             f"\nUser goal: {user_goal}\n\n"
             "Each step: {\"action\": \"<name>\", \"parameters\": {{<key: value>}}}"
         )
