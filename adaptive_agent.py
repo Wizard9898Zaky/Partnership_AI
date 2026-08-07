@@ -731,7 +731,7 @@ class AdaptiveAgent:
             "or is it just conversation?\n\n"
             f"Conversation context: {history_snippet}\n\n"
             f"User said: {user_goal}\n\n"
-            "Reply with one word only: action OR conversation"
+            "Answer with one word only — either 'action' or 'conversation'."
         )
         gate_text, gate_usage = safe_llm_call(gate_prompt, max_tokens=10, return_usage=True)
         self._track_llm_call(gate_usage)
