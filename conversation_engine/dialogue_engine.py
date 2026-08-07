@@ -204,11 +204,31 @@ class DialogueEngine:
             pass
 
         context_section = "\n\n".join(context_blocks)
-        prompt = (
-            f"{context_section}\n\n"
-            f"User said: {user_input}\n\n"
-            "Respond as Partnership_AI. Be natural, helpful, and thoughtful."
-        )
+
+        # Anti-hallucination guard: when system_override carries factual
+        # action results, instruct the LLM to report them faithfully
+        # and NEVER fabricate data that is not in the overview.
+        if system_override:
+            faithfulness_guard = (
+                "\n\nIMPORTANT: The information above is the factual result of "
+                "actions that were actually executed. Report these results "
+                "FAITHFULLY and ACCURATELY. Do NOT fabricate, invent, or "
+                "hallucinate data, items, ideas, files, or results that are "
+                "not explicitly present in the overview above. If the overview "
+                "says 0 items or empty results, tell the user it is empty — "
+                "do NOT make up items to seem helpful."
+            )
+            prompt = (
+                f"{context_section}{faithfulness_guard}\n\n"
+                f"User said: {user_input}\n\n"
+                "Respond as Partnership_AI. Be natural, helpful, and thoughtful."
+            )
+        else:
+            prompt = (
+                f"{context_section}\n\n"
+                f"User said: {user_input}\n\n"
+                "Respond as Partnership_AI. Be natural, helpful, and thoughtful."
+            )
 
         if not backend_call:
             return "Groq backend unavailable."

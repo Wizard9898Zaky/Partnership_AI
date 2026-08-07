@@ -1121,9 +1121,123 @@ class AdaptiveAgent:
         if trace:
             trace.outcome = "completed"
         overview = "\n".join(
-            f"- {r.action_used}: {r.output}" for r in execution_log
+            self._format_execution_result(r) for r in execution_log
         )
         return overview or "Actions completed with no output."
+
+    def _format_execution_result(self, r) -> str:
+        """
+        Format an ExecutionResult into a clear, human-readable overview line.
+
+        Extracts the actual data from the ActionResult instead of dumping
+        the raw repr, and explicitly flags empty results so the LLM in
+        DialogueEngine cannot misinterpret or fabricate data that does
+        not exist.
+
+        Args:
+            r: The ExecutionResult to format.
+
+        Returns:
+            A readable string like:
+              "incubator_get_all_ideas: Found 0 ideas. The incubator is currently empty."
+            instead of:
+              "incubator_get_all_ideas: ActionResult(success=True, data={'ideas': [], 'count': 0})"
+        """
+        action_name = r.action_used
+        if not r.success:
+            return f"- {action_name}: FAILED - {r.output}"
+
+        # Try to extract structured data from the full ActionResult
+        result = r.full_result
+        if result is None:
+            return f"- {action_name}: {r.output}"
+
+        # Check if it is an ActionResult with .data
+        data = None
+        if hasattr(result, 'data'):
+            data = result.data
+        elif isinstance(result, dict):
+            data = result.get('data')
+
+        if data is None:
+            return f"- {action_name}: completed successfully."
+
+        # Format based on the structure of the data
+        if isinstance(data, dict):
+            # Check for common "empty result" patterns
+            count = data.get('count', data.get('total', data.get('num_results')))
+            items = data.get('ideas', data.get('results', data.get('items', data.get('files', data.get('tasks')))))
+
+            if count is not None and count == 0:
+                # Explicitly state empty - this is the anti-hallucination guard
+                if 'ideas' in data:
+                    return f"- {action_name}: Found 0 ideas. The idea incubator is currently empty - no ideas have been stored yet."
+                elif 'results' in data:
+                    return f"- {action_name}: Found 0 results. No matching items were found."
+                elif 'files' in data:
+                    return f"- {action_name}: Found 0 files. No files matched the query."
+                elif 'tasks' in data:
+                    return f"- {action_name}: Found 0 scheduled tasks. No tasks are currently scheduled."
+                else:
+                    return f"- {action_name}: Found 0 items. The result is empty."
+
+            if items is not None and isinstance(items, list) and len(items) == 0:
+                if 'ideas' in data:
+                    return f"- {action_name}: Found 0 ideas. The idea incubator is currently empty - no ideas have been stored yet."
+                elif 'results' in data:
+                    return f"- {action_name}: Found 0 results. No matching items were found."
+                elif 'files' in data:
+                    return f"- {action_name}: Found 0 files. No files matched the query."
+                elif 'tasks' in data:
+                    return f"- {action_name}: Found 0 tasks. No scheduled tasks exist."
+                else:
+                    return f"- {action_name}: Found 0 items. The result is empty."
+
+            # Non-empty result - format the data clearly
+            if items is not None and isinstance(items, list) and len(items) > 0:
+                summary_parts = [f"Found {len(items)} item(s):"]
+                for item in items[:10]:
+                    if isinstance(item, dict):
+                        title = item.get('title', item.get('name', item.get('id', 'untitled')))
+                        summary_parts.append(f"  - {title}")
+                    else:
+                        summary_parts.append(f"  - {str(item)[:100]}")
+                if len(items) > 10:
+                    summary_parts.append(f"  ... and {len(items) - 10} more")
+                return f"- {action_name}: " + "\n".join(summary_parts)
+
+            # Generic dict result - include key facts
+            key_facts = []
+            for k, v in data.items():
+                if isinstance(v, (str, int, float, bool)):
+                    key_facts.append(f"{k}={v}")
+                elif isinstance(v, list):
+                    key_facts.append(f"{k}=[{len(v)} items]")
+                elif isinstance(v, dict):
+                    key_facts.append(f"{k}={{...}}")
+            if key_facts:
+                return f"- {action_name}: " + ", ".join(key_facts)
+            return f"- {action_name}: completed successfully."
+
+        elif isinstance(data, list):
+            if len(data) == 0:
+                return f"- {action_name}: returned an empty list. No items found."
+            summary_parts = [f"Found {len(data)} item(s):"]
+            for item in data[:10]:
+                if isinstance(item, dict):
+                    title = item.get('title', item.get('name', item.get('id', 'untitled')))
+                    summary_parts.append(f"  - {title}")
+                else:
+                    summary_parts.append(f"  - {str(item)[:100]}")
+            if len(data) > 10:
+                summary_parts.append(f"  ... and {len(data) - 10} more")
+            return f"- {action_name}: " + "\n".join(summary_parts)
+
+        elif isinstance(data, str):
+            return f"- {action_name}: {data}"
+
+        else:
+            return f"- {action_name}: completed successfully."
 
     def execute_step_with_adaptation(
         self,
