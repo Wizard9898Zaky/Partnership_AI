@@ -2240,6 +2240,172 @@ Return ONLY JSON in this exact format:
         )
         return overview
 
+    # ═══════════════════════════════════════
+    # Change Request Detection
+    # ═══════════════════════════════════════
+
+    # Phrases that indicate the user is explicitly requesting a CR.
+    _CR_REQUEST_PHRASES = [
+        "make a change request",
+        "create a change request",
+        "make a cr",
+        "create a cr",
+        "file a change request",
+        "submit a change request",
+        "make change request",
+        "create change request",
+        "propose a change",
+        "request a change",
+        "make a change",
+        "create a change",
+        "request change",
+        "propose change",
+        "trigger evolution",
+        "trigger an evolution",
+        "request evolution",
+        "make an evolution",
+        "create an evolution",
+        "evolve the system",
+        "evolve for",
+        "generate a change request",
+        "generate a cr",
+        "submit a cr",
+        "file a cr",
+        "make a patch",
+        "create a patch",
+        "generate a patch",
+        "make a code change",
+        "create a code change",
+        "propose a code change",
+        "request a code change",
+        "make an upgrade",
+        "propose an upgrade",
+        "request an upgrade",
+        "make a modification",
+        "propose a modification",
+        "request a modification",
+    ]
+
+    def _is_cr_request(self, user_input: str) -> bool:
+        """
+        Detect whether the user is explicitly requesting a Change Request.
+
+        Catches phrases like "make a change request for X", "create a CR
+        for Y", "propose a change to Z", "trigger evolution for W".
+
+        Args:
+            user_input: The raw user message.
+
+        Returns:
+            True if this looks like an explicit CR request, False otherwise.
+        """
+        lowered = user_input.lower().strip()
+
+        for phrase in self._CR_REQUEST_PHRASES:
+            if phrase in lowered:
+                return True
+
+        return False
+
+    def _extract_cr_context(self, user_input: str, session_history: str) -> tuple:
+        """
+        Extract the capability name and reasoning from the user's
+        CR request, using conversation context if available.
+
+        Tries to parse patterns like:
+          - "make a change request for web_operation"
+          - "create a CR for merging web_search and fetch_url"
+          - "propose a change to add a new memory tool"
+          - "trigger evolution for file compression"
+
+        If the user_input doesn't contain an explicit capability name,
+        falls back to using recent conversation context to infer it.
+
+        Args:
+            user_input:      The user's current message.
+            session_history:  Recent conversation context.
+
+        Returns:
+            A (capability, reasoning) tuple of strings.
+        """
+        lowered = user_input.lower().strip()
+
+        # Try to extract the capability name after common prepositions
+        # Patterns: "for X", "for the X", "to X", "to add X", "to merge X"
+        import re as _re
+
+        # Try "for <something>" pattern first
+        for pattern in [
+            r"(?:make|create|file|submit|generate)\s+(?:a\s+)?(?:change\s+request|cr|patch)\s+for\s+(.+)",
+            r"(?:propose|request)\s+(?:a\s+)?(?:change|code\s+change|modification|upgrade)\s+(?:for|to)\s+(.+)",
+            r"trigger\s+(?:an\s+)?evolution\s+for\s+(.+)",
+            r"evolve\s+(?:the\s+system\s+)?for\s+(.+)",
+            r"make\s+(?:a\s+)?(?:change|code\s+change|modification)\s+(?:for|to)\s+(.+)",
+            r"create\s+(?:a\s+)?(?:change|code\s+change|modification)\s+(?:for|to)\s+(.+)",
+            r"generate\s+(?:a\s+)?(?:patch|change)\s+for\s+(.+)",
+        ]:
+            match = _re.search(pattern, lowered)
+            if match:
+                capability = match.group(1).strip()
+                # Clean up trailing punctuation
+                capability = capability.rstrip('.!?')
+                # Use the original (non-lowered) version if it's a known action name
+                # Otherwise, use the extracted text as the capability name
+                reasoning = f"User explicitly requested a change request for: {capability}"
+                return capability, reasoning
+
+        # Fallback: use conversation context to infer what the CR is about
+        if session_history and session_history.strip():
+            recent_user_msgs = []
+            for line in session_history.split("\n"):
+                if line.strip().startswith("USER:"):
+                    msg = line.strip()[5:].strip()
+                    if msg:
+                        recent_user_msgs.append(msg)
+
+            if recent_user_msgs:
+                # Use the last few user messages as context
+                context_summary = " | ".join(recent_user_msgs[-3:])
+                capability = "inferred_from_context"
+                reasoning = (
+                    f"User requested a change request. Recent conversation context: "
+                    f"{context_summary[:500]}"
+                )
+                return capability, reasoning
+
+        # Ultimate fallback
+        return "user_requested_change", f"User explicitly requested: {user_input[:300]}"
+
+    def _handle_cr_request(self, user_input: str, session_history: str) -> str:
+        """
+        Handle an explicit CR request by routing it directly to
+        _trigger_evolution(), bypassing the intent gate and planner.
+
+        This is the ONLY way for a user to explicitly request code
+        changes without triggering an indirect capability gap.
+
+        Args:
+            user_input:      The user's current message.
+            session_history: Recent conversation context.
+
+        Returns:
+            A factual overview string to pass to DialogueEngine.
+        """
+        capability, reasoning = self._extract_cr_context(user_input, session_history)
+
+        # Build a user goal that includes the full context
+        user_goal = f"User explicitly requested: {user_input}"
+
+        # Call _trigger_evolution directly
+        result = self._trigger_evolution(
+            user_goal=user_goal,
+            missing_capability=capability,
+            reasoning=reasoning,
+        )
+
+        return result
+
+
     def run(self, user_input: str, session_history: str = "") -> Union[bool, str]:
         """
         Main entry point for processing a user request.
@@ -2301,6 +2467,15 @@ Return ONLY JSON in this exact format:
         if self._is_capability_query(user_input):
             overview = self._build_capability_overview(user_input, session_history)
             self._current_trace.finish(overview, outcome="capability_query")
+            return overview
+
+        # ── Change Request detection ────────────────────────────────
+        # Check before the intent gate so explicit CR requests bypass
+        # the action/conversation classifier and route directly to
+        # _trigger_evolution() which generates code proposals.
+        if self._is_cr_request(user_input):
+            overview = self._handle_cr_request(user_input, session_history)
+            self._current_trace.finish(overview, outcome="cr_request")
             return overview
 
         try:
