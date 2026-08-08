@@ -69,6 +69,17 @@ class MemoryEngine:
         """Lazily create EthicsReflector only when first needed."""
         if self._ethics is None:
             self._ethics = EthicsReflector()
+        # If ethics is disabled via config, return a stub that approves everything
+        if not self._ethics.enabled:
+            class _NoOpEthics:
+                def check_text_against_core_principles(self, text):
+                    return True
+                def review(self, *a, **kw):
+                    return a[0] if a else "", []
+                def review_deep(self, *a, **kw):
+                    return a[-1] if a else "", []
+                enabled = False
+            self._ethics = _NoOpEthics()
         return self._ethics
 
     def _load(self):

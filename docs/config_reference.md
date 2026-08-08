@@ -55,15 +55,18 @@ Controls the two-pass ethics validation system.
 | Key | Type | Default | Effect |
 |---|---|---|---|
 | `enabled` | bool | `true` | If `false`, the ethics reflector is not created and no ethics checks run. All outbound responses skip Pass 1 (keyword) and Pass 2 (LLM) validation. Responses are sent unfiltered. |
-| `threshold` | string | `"lenient"` | Reserved for future strictness levels (`"lenient"`, `"moderate"`, `"strict"`). Currently the ethics system uses a two-pass approach that doesn't branch on this value — it's read into config but all three thresholds run the same checks. Future versions may gate which principles are mandatory vs advisory based on this. |
-| `allow_warnings` | bool | `true` | If `true`, responses that trigger ethics *warnings* (but not hard blocks) are still sent to the user. If `false`, warnings are treated as blocks. |
-| `blocked_placeholder` | string | `"[⚠️] The generated answer was blocked by ethics checks."` | The text shown to the user when a response is blocked by ethics validation. You can customize this to any string. |
+| `threshold` | string | `"lenient"` | Controls which principle violations cause a hard block vs a warning. `"lenient"`: only mandatory principles (non_harm, transparency, protect_core_principles, safety_fallback, sovereignty) block; other Pass 1 violations are warnings. `"moderate"`: all Pass 1 violations block; Pass 2 behavioral issues are warnings (unless `allow_warnings` is false). `"strict"`: any violation — Pass 1 or Pass 2, including warnings — causes a hard block. |
+| `allow_warnings` | bool | `true` | If `true`, responses that trigger ethics *warnings* (but not hard blocks) are still sent to the user (with a soft realignment note appended). If `false`, warnings are treated as blocks and the response is replaced with `blocked_placeholder`. |
+| `blocked_placeholder` | string | `"[⚠️] The generated answer was blocked by ethics checks."` | The text returned to the user when a response is blocked by ethics validation. Customizable to any string. Also used in `AdaptiveAgent.run()` when Pass 1 rejects an output. |
 
-**Disabling ethics (`"enabled": false`):** No ethics checks run at all. The
-`ethics_reflector` attribute on `AdaptiveAgent` is set to `None`, and the
-`_ethics_check` / `_ethics_deep_review` methods return immediately without
-blocking. MemoryEngine's lazy `ethics` property also won't be used for
-insight storage validation.
+**Disabling ethics (`"enabled": false`):** No ethics checks run at all.
+`EthicsReflector.enabled` is `False`, so `review()`, `review_deep()`, and
+`check_text_against_core_principles()` all return immediately without
+blocking. `AdaptiveAgent._validate_ethics()` and
+`_validate_ethics_deep()` short-circuit and allow everything through.
+`MemoryEngine`'s lazy `ethics` property replaces the reflector with a
+no-op stub that approves all text. The system still loads and runs, but
+all outbound responses skip Pass 1 (keyword) and Pass 2 (LLM) validation.
 
 ---
 

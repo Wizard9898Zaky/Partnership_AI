@@ -16,7 +16,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.096803+00:00"
+      "registered": "2026-08-08T19:45:39.119937+00:00"
     },
     "read_file": {
       "function_name": "read_file",
@@ -28,7 +28,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.096881+00:00"
+      "registered": "2026-08-08T19:45:39.120015+00:00"
     },
     "search_code": {
       "function_name": "search_code",
@@ -45,7 +45,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.096950+00:00"
+      "registered": "2026-08-08T19:45:39.120119+00:00"
     },
     "get_file_stats": {
       "function_name": "get_file_stats",
@@ -57,7 +57,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.096985+00:00"
+      "registered": "2026-08-08T19:45:39.120155+00:00"
     },
     "analyze_code_quality": {
       "function_name": "analyze_code_quality",
@@ -69,7 +69,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.097014+00:00"
+      "registered": "2026-08-08T19:45:39.120183+00:00"
     },
     "propose_upgrade": {
       "function_name": "propose_upgrade",
@@ -86,7 +86,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.097248+00:00"
+      "registered": "2026-08-08T19:45:39.120229+00:00"
     },
     "generate_and_write_code": {
       "function_name": "generate_and_write_code",
@@ -108,7 +108,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.097333+00:00"
+      "registered": "2026-08-08T19:45:39.120280+00:00"
     },
     "store_fact": {
       "function_name": "store_fact",
@@ -130,7 +130,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.098250+00:00"
+      "registered": "2026-08-08T19:45:39.121144+00:00"
     },
     "recall_memory": {
       "function_name": "recall_memory",
@@ -152,7 +152,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.098332+00:00"
+      "registered": "2026-08-08T19:45:39.121218+00:00"
     },
     "update_memory": {
       "function_name": "update_memory",
@@ -174,7 +174,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098380+00:00"
+      "registered": "2026-08-08T19:45:39.121264+00:00"
     },
     "delete_memory": {
       "function_name": "delete_memory",
@@ -196,7 +196,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098423+00:00"
+      "registered": "2026-08-08T19:45:39.121308+00:00"
     },
     "store_vocabulary_metric": {
       "function_name": "store_vocabulary_metric",
@@ -218,7 +218,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098503+00:00"
+      "registered": "2026-08-08T19:45:39.121399+00:00"
     },
     "recall_vocabulary_metric": {
       "function_name": "recall_vocabulary_metric",
@@ -235,7 +235,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098541+00:00"
+      "registered": "2026-08-08T19:45:39.121440+00:00"
     },
     "recall_all_vocabulary_metrics": {
       "function_name": "recall_all_vocabulary_metrics",
@@ -247,7 +247,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098575+00:00"
+      "registered": "2026-08-08T19:45:39.121474+00:00"
     },
     "delete_vocabulary_metric": {
       "function_name": "delete_vocabulary_metric",
@@ -264,7 +264,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098607+00:00"
+      "registered": "2026-08-08T19:45:39.121506+00:00"
     },
     "store_preference": {
       "function_name": "store_preference",
@@ -291,7 +291,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.098660+00:00"
+      "registered": "2026-08-08T19:45:39.121560+00:00"
     },
     "list_preferences": {
       "function_name": "list_preferences",
@@ -303,7 +303,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.098684+00:00"
+      "registered": "2026-08-08T19:45:39.121584+00:00"
     },
     "clear_user_data": {
       "function_name": "clear_user_data",
@@ -320,7 +320,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.098713+00:00"
+      "registered": "2026-08-08T19:45:39.121622+00:00"
     },
     "add_persistent_fact": {
       "function_name": "add_persistent_fact",
@@ -342,7 +342,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.098757+00:00"
+      "registered": "2026-08-08T19:45:39.121661+00:00"
     },
     "save_state": {
       "function_name": "save_state",
@@ -354,7 +354,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.099181+00:00"
+      "registered": "2026-08-08T19:45:39.122072+00:00"
     },
     "load_state": {
       "function_name": "load_state",
@@ -366,13 +366,13 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.099224+00:00"
+      "registered": "2026-08-08T19:45:39.122115+00:00"
     },
     "refresh_metadata": {
       "function_name": "refresh_metadata",
       "description": "Action: refresh and persist the action metadata JSON file.\n\n    Returns:\n        ActionResult from save_metadata().\n    ",
       "parameters": [],
-      "registered": "2026-08-08T19:30:30.099246+00:00"
+      "registered": "2026-08-08T19:45:39.122137+00:00"
     },
     "get_function_signatures": {
       "function_name": "get_function_signatures",
@@ -384,19 +384,19 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.099293+00:00"
+      "registered": "2026-08-08T19:45:39.122186+00:00"
     },
     "list_capabilities": {
       "function_name": "list_capabilities",
       "description": "Action: return a list of all registered action names and descriptions.",
       "parameters": [],
-      "registered": "2026-08-08T19:30:30.099311+00:00"
+      "registered": "2026-08-08T19:45:39.122205+00:00"
     },
     "get_system_status": {
       "function_name": "get_system_status",
       "description": "Action: return current system status including file counts and ethics state.",
       "parameters": [],
-      "registered": "2026-08-08T19:30:30.099332+00:00"
+      "registered": "2026-08-08T19:45:39.122220+00:00"
     },
     "respond_to_user": {
       "function_name": "respond_to_user",
@@ -408,7 +408,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.102411+00:00"
+      "registered": "2026-08-08T19:45:39.125421+00:00"
     },
     "request_change": {
       "function_name": "request_change",
@@ -425,7 +425,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.102464+00:00"
+      "registered": "2026-08-08T19:45:39.125473+00:00"
     },
     "incubator_insert_idea": {
       "function_name": "incubator_insert_idea",
@@ -462,7 +462,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108497+00:00"
+      "registered": "2026-08-08T19:45:39.128712+00:00"
     },
     "incubator_get_all_ideas": {
       "function_name": "incubator_get_all_ideas",
@@ -474,7 +474,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.108554+00:00"
+      "registered": "2026-08-08T19:45:39.128758+00:00"
     },
     "incubator_search_ideas": {
       "function_name": "incubator_search_ideas",
@@ -491,7 +491,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.108594+00:00"
+      "registered": "2026-08-08T19:45:39.128796+00:00"
     },
     "incubator_analyze_idea": {
       "function_name": "incubator_analyze_idea",
@@ -508,7 +508,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108640+00:00"
+      "registered": "2026-08-08T19:45:39.128844+00:00"
     },
     "incubator_generate_ideas": {
       "function_name": "incubator_generate_ideas",
@@ -525,7 +525,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108673+00:00"
+      "registered": "2026-08-08T19:45:39.128878+00:00"
     },
     "incubator_connect_ideas": {
       "function_name": "incubator_connect_ideas",
@@ -557,7 +557,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108736+00:00"
+      "registered": "2026-08-08T19:45:39.128951+00:00"
     },
     "incubator_get_statistics": {
       "function_name": "incubator_get_statistics",
@@ -569,7 +569,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.108770+00:00"
+      "registered": "2026-08-08T19:45:39.128979+00:00"
     },
     "incubator_ask_natural": {
       "function_name": "incubator_ask_natural",
@@ -586,7 +586,7 @@
           "required": true
         }
       ],
-      "registered": "2026-08-08T19:30:30.108802+00:00"
+      "registered": "2026-08-08T19:45:39.129010+00:00"
     },
     "delete_idea": {
       "function_name": "delete_idea",
@@ -603,7 +603,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108846+00:00"
+      "registered": "2026-08-08T19:45:39.129057+00:00"
     },
     "incubator_delete_idea": {
       "function_name": "incubator_delete_idea",
@@ -620,7 +620,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.108877+00:00"
+      "registered": "2026-08-08T19:45:39.129095+00:00"
     },
     "update_idea": {
       "function_name": "update_idea",
@@ -662,7 +662,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109003+00:00"
+      "registered": "2026-08-08T19:45:39.129219+00:00"
     },
     "incubator_update_idea": {
       "function_name": "incubator_update_idea",
@@ -704,7 +704,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109117+00:00"
+      "registered": "2026-08-08T19:45:39.129354+00:00"
     },
     "export_ideas": {
       "function_name": "export_ideas",
@@ -716,7 +716,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109150+00:00"
+      "registered": "2026-08-08T19:45:39.129384+00:00"
     },
     "incubator_export_ideas": {
       "function_name": "incubator_export_ideas",
@@ -728,7 +728,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109174+00:00"
+      "registered": "2026-08-08T19:45:39.129408+00:00"
     },
     "import_ideas": {
       "function_name": "import_ideas",
@@ -745,7 +745,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109232+00:00"
+      "registered": "2026-08-08T19:45:39.129467+00:00"
     },
     "incubator_import_ideas": {
       "function_name": "incubator_import_ideas",
@@ -762,7 +762,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109283+00:00"
+      "registered": "2026-08-08T19:45:39.129528+00:00"
     },
     "get_idea_graph": {
       "function_name": "get_idea_graph",
@@ -774,7 +774,7 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109309+00:00"
+      "registered": "2026-08-08T19:45:39.129556+00:00"
     },
     "incubator_get_idea_graph": {
       "function_name": "incubator_get_idea_graph",
@@ -786,8 +786,8 @@
           "required": false
         }
       ],
-      "registered": "2026-08-08T19:30:30.109337+00:00"
+      "registered": "2026-08-08T19:45:39.129578+00:00"
     }
   },
-  "updated": "2026-08-08T19:30:30.109341+00:00"
+  "updated": "2026-08-08T19:45:39.129582+00:00"
 }

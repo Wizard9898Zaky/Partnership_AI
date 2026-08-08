@@ -696,8 +696,10 @@ class AdaptiveAgent:
         """
         Pass 1 keyword ethics check on outbound text.
         Returns True if the text is clear to send.
+        Respects ethics.enabled, ethics.threshold, and ethics.allow_warnings
+        from config.json via the EthicsReflector's own config logic.
         """
-        if not self.ethics_reflector:
+        if not self.ethics_reflector or not self.ethics_reflector.enabled:
             return True
         try:
             _, issues = self.ethics_reflector.review(text)
@@ -713,8 +715,10 @@ class AdaptiveAgent:
         """
         Full two-pass ethics check (Pass 1 keyword + Pass 2 LLM behavioral).
         Returns (possibly_modified_response, list_of_issues).
+        Respects ethics.enabled from config.json — returns unmodified response
+        if ethics is disabled.
         """
-        if not self.ethics_reflector:
+        if not self.ethics_reflector or not self.ethics_reflector.enabled:
             return response, []
         try:
             return self.ethics_reflector.review_deep(user_input, response)
@@ -2334,7 +2338,11 @@ Return ONLY JSON in this exact format:
             # contain something problematic, independent of how
             # DialogueEngine eventually phrases it.
             if not self._validate_ethics(overview, "run_output"):
-                blocked_msg = "⚠️ That response was blocked by ethics controls."
+                blocked_msg = (
+                    self.ethics_reflector.blocked_placeholder
+                    if self.ethics_reflector
+                    else "⚠️ That response was blocked by ethics controls."
+                )
                 self._current_trace.finish(blocked_msg, outcome="ethics_blocked")
                 return blocked_msg
 

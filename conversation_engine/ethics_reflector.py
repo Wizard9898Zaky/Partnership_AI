@@ -31,6 +31,14 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Callable, Tuple, Optional
 
+# Config-driven ethics settings
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from app_config import get_config
+except Exception:
+    get_config = None
+
 # ──────
 # Logger
 # ──────
@@ -363,15 +371,61 @@ class EthicsReflector:
     """
 
     def __init__(self, values_dir: str = "values_kernel", summarizer=None):
+        # ── Load config-driven ethics settings ──
+        self.enabled = True
+        self.threshold = "lenient"
+        self.allow_warnings = True
+        self.blocked_placeholder = "[⚠️] The generated answer was blocked by ethics checks."
+        if get_config is not None:
+            try:
+                _eth_cfg = get_config().get("ethics", {})
+                self.enabled = _eth_cfg.get("enabled", True)
+                self.threshold = _eth_cfg.get("threshold", "lenient")
+                self.allow_warnings = _eth_cfg.get("allow_warnings", True)
+                self.blocked_placeholder = _eth_cfg.get(
+                    "blocked_placeholder",
+                    "[⚠️] The generated answer was blocked by ethics checks.",
+                )
+            except Exception:
+                pass  # fall back to defaults
+
+        if not self.enabled:
+            self.values_dir = Path(values_dir)
+            self.principles = []
+            self.summarizer = summarizer
+            logger.info("[Ethics] Ethics checks DISABLED via config.json (ethics.enabled = false).")
+            return
+
         self.values_dir = Path(values_dir)
         self.principles = _load_ethics_spec()
         self.summarizer = summarizer  # Optional — required for Pass 2
+
+        # ── Build the set of mandatory principle IDs based on threshold ──
+        # "lenient":   all 27 principles are checked, but only hard blocks
+        #              (non_harm, transparency, protect_core_principles,
+        #              safety_fallback, sovereignty) cause rejection.
+        # "moderate":  all 27 checked; any Pass 1 violation blocks; Pass 2
+        #              warnings are surfaced but don't block if allow_warnings.
+        # "strict":     all 27 checked; any violation (Pass 1 or Pass 2,
+        #              including warnings) causes rejection.
+        _hard_block_ids = {
+            "non_harm", "transparency", "protect_core_principles",
+            "safety_fallback", "sovereignty_with_responsibility",
+        }
+        if self.threshold == "strict":
+            self._mandatory_ids = {p.get("id") for p in self.principles}
+        elif self.threshold == "moderate":
+            self._mandatory_ids = {p.get("id") for p in self.principles}
+        else:  # "lenient" (default)
+            self._mandatory_ids = _hard_block_ids
+
         covered_p1 = [p.get("id") for p in self.principles if p.get("id") in _RULE_REGISTRY]
         covered_p2 = [p.get("id") for p in self.principles if p.get("id") in _LLM_EVALUATED_PRINCIPLES]
         logger.info(
             f"[Ethics] Pass 1 (keyword): {len(covered_p1)} principles covered. "
             f"Pass 2 (LLM): {len(covered_p2)} principles covered. "
-            f"Total: {len(covered_p1) + len(covered_p2)}/{len(self.principles)}."
+            f"Total: {len(covered_p1) + len(covered_p2)}/{len(self.principles)}. "
+            f"Threshold: {self.threshold} | Allow warnings: {self.allow_warnings}"
         )
 
     def _get_llm_fn(self) -> Optional[Callable[[str], str]]:
@@ -410,6 +464,10 @@ class EthicsReflector:
         Returns:
             (possibly_modified_text, list_of_issues)
         """
+        # If ethics is disabled via config, skip all checks.
+        if not self.enabled:
+            return response_text, []
+
         message = {"role": "assistant", "content": response_text}
 
         # Pass 1: keyword rules
@@ -427,7 +485,53 @@ class EthicsReflector:
                 logger.warning("[Ethics] Pass 2 requested but no LLM available. Skipping.")
 
         if issues:
-            return self._soft_realign(response_text, issues), issues
+            # Determine if this is a block (rejection) or a warning.
+            # Under "lenient", only mandatory principle violations block.
+            # Under "moderate"/"strict", all Pass 1 violations block.
+            # Pass 2 issues are warnings unless threshold is "strict".
+            blocking_issues = []
+            warning_issues = []
+
+            for issue in issues:
+                # Pass 1 issues are structural — check against mandatory set.
+                if issue.startswith("[Pass 1]"):
+                    # All Pass 1 violations are blocking under moderate/strict.
+                    # Under lenient, only mandatory principles block.
+                    if self.threshold == "lenient":
+                        # Check if any mandatory principle ID appears in the issue text
+                        is_mandatory = any(
+                            pid.replace("_", " ") in issue.lower()
+                            or pid in issue.lower()
+                            for pid in self._mandatory_ids
+                        )
+                        if is_mandatory:
+                            blocking_issues.append(issue)
+                        else:
+                            warning_issues.append(issue)
+                    else:
+                        blocking_issues.append(issue)
+                else:
+                    # Pass 2 issues are behavioral.
+                    if self.threshold == "strict":
+                        blocking_issues.append(issue)
+                    else:
+                        warning_issues.append(issue)
+
+            # Apply allow_warnings setting
+            if not self.allow_warnings and warning_issues:
+                blocking_issues.extend(warning_issues)
+                warning_issues = []
+
+            if blocking_issues:
+                # Return the blocked placeholder instead of the response
+                logger.warning(f"[Ethics] BLOCKED ({len(blocking_issues)} issues).")
+                return self.blocked_placeholder, blocking_issues + warning_issues
+            elif warning_issues:
+                # Only warnings, and allow_warnings is True — soft realign
+                return self._soft_realign(response_text, warning_issues), warning_issues
+            else:
+                return response_text, []
+
         return response_text, []
 
     def review_deep(self, user_input: str, response_text: str) -> Tuple[str, List[str]]:
@@ -435,12 +539,16 @@ class EthicsReflector:
         Convenience method: runs both Pass 1 and Pass 2 explicitly.
         Use this when you have the user's input and want full coverage.
         """
+        if not self.enabled:
+            return response_text, []
         return self.review(response_text, user_input=user_input, llm_pass=True)
 
     def check_text_against_core_principles(self, text: str) -> bool:
         """
         Quick Pass 1 check only. Returns True if text passes all keyword rules.
         """
+        if not self.enabled:
+            return True
         message = {"role": "assistant", "content": text}
         issues = _evaluate_message_pass1(message, self.principles)
         return len(issues) == 0
