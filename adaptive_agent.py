@@ -80,13 +80,36 @@ PROTECTED_FILES = {
 }
 
 # ───────
-# Logging
+# Logging — level is driven by config.json ("logging": {"level": "DEBUG"}).
+# At INFO level, httpx/httpcore HTTP request logs are suppressed to keep
+# startup output clean. Set level to "DEBUG" to see them.
 # ───────
+_log_level_name = "INFO"
+try:
+    import json as _json
+    _cfg_path = Path(__file__).parent / "config.json"
+    if _cfg_path.exists():
+        with open(_cfg_path, "r") as _f:
+            _cfg = _json.load(_f)
+        _log_level_name = str(_cfg.get("logging", {}).get("level", "INFO")).upper()
+except Exception:
+    pass
+
+_log_level = getattr(logging, _log_level_name, logging.INFO)
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=_log_level,
     format="[%(asctime)s] %(levelname)s :: %(message)s",
 )
 logger = logging.getLogger("AdaptiveAgent")
+
+# httpx (used by the Groq SDK) logs every HTTP request at INFO. That's
+# noisy at the default level, so force httpx/httpcore to WARNING unless
+# we're in DEBUG mode where the user explicitly asked to see them.
+if _log_level_name != "DEBUG":
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
 
 # ─────────────────────────────────────────────────────────────────────
 # External Imports — all optional with graceful fallback
