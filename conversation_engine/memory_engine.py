@@ -54,14 +54,22 @@ class MemoryEngine:
         # 3. Load structured data (plans,
         #    identity).
         self._load()
-        # 4. Initialize Ethics Reflector.
-        self.ethics = EthicsReflector()
+        # 4. Ethics Reflector — lazily initialized on first use to avoid
+        #    duplicate "Loaded 27 principles" log spam at startup.
+        self._ethics = None
         # 5. Migrate old formats if necessary (NOW
         #    that data exists).
         self._auto_migrate_all_users()
         # 6. Save any migrations immediately.
         self._save_memory()
         self._save()
+
+    @property
+    def ethics(self):
+        """Lazily create EthicsReflector only when first needed."""
+        if self._ethics is None:
+            self._ethics = EthicsReflector()
+        return self._ethics
 
     def _load(self):
         """Load structured data (plans, identity) from disk."""

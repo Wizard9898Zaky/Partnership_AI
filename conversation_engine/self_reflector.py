@@ -45,12 +45,7 @@ from typing import List, Dict, Any, Callable, Tuple, Optional
 # Logger
 # ──────
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # ─────
 # Types
@@ -244,7 +239,8 @@ def _load_ethics_spec() -> List[Principle]:
         with open(ETHICS_SPEC_PATH, "r", encoding="utf-8") as f:
             spec = json.load(f)
         principles = spec.get("core_principles", [])
-        logger.info(f"[Ethics] Loaded {len(principles)} principles.")
+        # Don't log here — EthicsReflector already logs this on its own init.
+        # self_reflector loads the same spec for its own Pass 1 keyword checks.
         return principles
     except Exception as e:
         logger.error(f"[Ethics] Failed to load ethics.json: {e}")

@@ -35,12 +35,7 @@ from typing import List, Dict, Any, Callable, Tuple, Optional
 # Logger
 # ──────
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # ─────
 # Types
