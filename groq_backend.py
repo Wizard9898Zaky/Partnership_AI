@@ -129,6 +129,10 @@ def _load_log_config() -> dict:
     """
     Read llm_logging section from config.json.
     Returns defaults if the file is missing or malformed.
+
+    Auto-linkage: if llm_logging.enabled is not explicitly set in config,
+    enabled is derived from logging.level — True when DEBUG, False otherwise.
+    If enabled IS explicitly set, that value is respected.
     """
     _defaults = {"enabled": False, "log_path": "plans.log", "rotate_mb": 5, "rotate_keep": 3}
     try:
@@ -140,7 +144,17 @@ def _load_log_config() -> dict:
         # FIX: only strip // comments that are NOT part of a URL scheme
         raw = re.sub(r'(?<!:)//[^\n]*', "", raw)
         cfg = json.loads(raw)
-        return {**_defaults, **cfg.get("llm_logging", {})}
+
+        llm_cfg = {**_defaults, **cfg.get("llm_logging", {})}
+
+        # Auto-link: if "enabled" is not explicitly in the config's
+        # llm_logging section, derive it from the logging level.
+        # DEBUG → logging enabled, anything else → disabled.
+        if "enabled" not in cfg.get("llm_logging", {}):
+            log_level = str(cfg.get("logging", {}).get("level", "INFO")).upper()
+            llm_cfg["enabled"] = (log_level == "DEBUG")
+
+        return llm_cfg
     except Exception:
         return _defaults
 

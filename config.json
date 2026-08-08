@@ -1,55 +1,54 @@
 {
-  "logging": {
-    "level": "INFO",
-    "to_file": true,
-    "file_path": "cr_logs/app.log"
-  },
-  "ethics": {
-    "enabled": true,
-    "threshold": "lenient",
-    "allow_warnings": true,
-    "blocked_placeholder": "[\u26a0\ufe0f] The generated answer was blocked by ethics checks."
-  },
-  "session": {
-    "dump_on_exit": true,
-    "dump_dir": "cr_logs/session_dumps"
-  },
-  "learning": {
-    "enabled": true,
-    "max_batch_size": 500,
-    "min_interval_minutes": 60
-  },
-  "fallback": {
-    "use_groq": true,
-    "use_stub": false
-  },
-  "llm_logging": {
-    "enabled": true,
-    "log_path": "plans.log",
-    "rotate_mb": 5,
-    "rotate_keep": 3
-  },
-  "sandbox": {
-    "timeout_seconds": 30,
-    "max_memory_mb": 256,
-    "max_cpu_seconds": 10,
-    "use_firejail_if_available": true
-  },
-  "reviewer": {
-    "smoke_test_timeout_seconds": 30,
-    "run_full_test_suite_on_accept": true,
-    "backup_history_limit": 20
-  },
-  "agent": {
-    "max_plan_steps": 12,
-    "max_runtime_seconds": 60,
-    "max_llm_calls_per_turn": 8,
-    "max_replan_attempts": 1,
-    "trace_rotate_mb": 5,
-    "trace_rotate_keep": 3,
-    "max_cost_usd_per_turn": 0.01,
-    "cost_per_million_input_tokens_usd": 0.15,
-    "cost_per_million_output_tokens_usd": 0.60,
-    "_cost_pricing_note": "Rates are for openai/gpt-oss-120b on Groq, sourced 2026-07-08. Groq pricing changes over time and varies by model - verify at https://groq.com/pricing before relying on these for real budget enforcement, especially if DEFAULT_MODEL in groq_backend.py is ever changed."
-  }
+    "logging": {
+        "level": "INFO",
+        "to_file": true,
+        "file_path": "cr_logs/app.log"
+    },
+    "ethics": {
+        "enabled": true,
+        "threshold": "lenient",
+        "allow_warnings": true,
+        "blocked_placeholder": "[⚠️] The generated answer was blocked by ethics checks."
+    },
+    "session": {
+        "dump_on_exit": true,
+        "dump_dir": "cr_logs/session_dumps"
+    },
+    "learning": {
+        "enabled": true,
+        "max_batch_size": 500,
+        "min_interval_minutes": 60
+    },
+    "fallback": {
+        "use_groq": true,
+        "use_stub": false
+    },
+    "llm_logging": {
+        "log_path": "plans.log",
+        "rotate_mb": 5,
+        "rotate_keep": 3
+    },
+    "sandbox": {
+        "timeout_seconds": 30,
+        "max_memory_mb": 256,
+        "max_cpu_seconds": 10,
+        "use_firejail_if_available": true
+    },
+    "reviewer": {
+        "smoke_test_timeout_seconds": 30,
+        "run_full_test_suite_on_accept": true,
+        "backup_history_limit": 20
+    },
+    "agent": {
+        "max_plan_steps": 12,
+        "max_runtime_seconds": 60,
+        "max_llm_calls_per_turn": 8,
+        "max_replan_attempts": 1,
+        "trace_rotate_mb": 5,
+        "trace_rotate_keep": 3,
+        "max_cost_usd_per_turn": 0.01,
+        "cost_per_million_input_tokens_usd": 0.15,
+        "cost_per_million_output_tokens_usd": 0.6,
+        "_cost_pricing_note": "Rates are for openai/gpt-oss-120b on Groq, sourced 2026-07-08. Groq pricing changes over time and varies by model - verify at https://groq.com/pricing before relying on these for real budget enforcement, especially if DEFAULT_MODEL in groq_backend.py is ever changed."
+    }
 }

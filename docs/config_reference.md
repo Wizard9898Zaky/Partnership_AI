@@ -161,14 +161,21 @@ and responses.
 
 | Key | Type | Default | Effect |
 |---|---|---|---|
-| `enabled` | bool | `true` | If `true`, every LLM call's full prompt, response, model, and status are written to `log_path`. If `false`, no LLM interaction logging occurs. |
+| `enabled` | bool | auto | If explicitly set, that value is used. If omitted (the default), automatically derived from `logging.level` — `true` when `DEBUG`, `false` otherwise. So: flip on debug mode and LLM logging comes with it; flip back to `INFO` and it turns off. |
 | `log_path` | string | `"plans.log"` | File path for LLM interaction logs. Relative to project root. |
 | `rotate_mb` | int | `5` | When the log file exceeds this size in MB, it's rotated (renamed to `.1`, `.2`, etc.). |
 | `rotate_keep` | int | `3` | Maximum number of rotated backup files to keep. Oldest are deleted. |
 
-**Disabling (`"enabled": false`):** No LLM prompts or responses are logged
-to disk. This saves disk space but makes it impossible to audit what the
-LLM was asked or how it responded after the fact.
+**Auto-linkage with debug mode:** If you omit `enabled` from the config
+(the shipped default), it auto-derives from `logging.level`. Set
+`"logging": {"level": "DEBUG"}` and LLM logging turns on automatically —
+every prompt and response is written to `plans.log`. Switch back to
+`"INFO"` and it turns off. No need to change two settings.
+
+**Explicitly disabling (`"enabled": false`):** If you explicitly set
+`"enabled": false` in the config, it stays off even in DEBUG mode —
+the explicit value always wins over the auto-derivation. Useful if you
+want debug HTTP logs but not the full prompt/response dump.
 
 **Each log entry contains:** timestamp, model name, attempt number,
 success/failure status, the full prompt text, and the full response text.
