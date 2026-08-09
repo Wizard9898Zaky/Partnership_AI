@@ -11,8 +11,7 @@
         "blocked_placeholder": "[⚠️] The generated answer was blocked by ethics checks."
     },
     "session": {
-        "dump_on_exit": true,
-        "dump_dir": "cr_logs/session_dumps"
+        "_note": "Session data is stored encrypted in user_logs/log-{user_hash}.enc. No plaintext dumps are written."
     },
     "learning": {
         "enabled": true,

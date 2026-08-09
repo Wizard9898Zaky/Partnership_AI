@@ -335,77 +335,55 @@ def _print_plugins() -> None:
 # ═══════════════════════════
 
 def _session_dump_dir() -> Path:
-    """Return the session-dump directory defined in config.json, creating it if needed."""
-    import json as _json
-    try:
-        cfg = _json.loads(Path(__file__).parent.joinpath("config.json").read_text())
-        dump_dir = Path(cfg.get("session", {}).get("dump_dir", "cr_logs/session_dumps"))
-    except Exception:
-        dump_dir = Path("cr_logs/session_dumps")
-    # Resolve relative paths against the project root
-    if not dump_dir.is_absolute():
-        dump_dir = Path(__file__).parent / dump_dir
-    dump_dir.mkdir(parents=True, exist_ok=True)
-    return dump_dir
+    """Deprecated — session dumps are no longer written to disk. Returns the old path for cleanup."""
+    return Path(__file__).parent / "cr_logs" / "session_dumps"
 
 
 def save_session_dump(session_log: list, user_hash: str) -> None:
     """
-    Write the current session's turn log to a plaintext file in the session-dump
-    directory if config.json → session → dump_on_exit is true.
-
-    File name format: ``session-<user_hash[:8]>-<ISO timestamp>.txt``
+    Session data is already persisted to the encrypted log file
+    (log-{user_hash}.enc) on every turn via atomic_encrypt_write().
+    This function is kept as a no-op stub for backward compatibility
+    — plaintext session dumps are no longer written to disk.
 
     Args:
         session_log: List of turn-entry strings accumulated during the session.
-        user_hash:   Hex digest identifying the user (first 8 chars used in filename).
+        user_hash:   Hex digest identifying the user.
     """
-    import json as _json
-    try:
-        cfg = _json.loads(Path(__file__).parent.joinpath("config.json").read_text())
-        if not cfg.get("session", {}).get("dump_on_exit", True):
-            return
-    except Exception:
-        pass  # Default to saving if config unreadable
-    if not session_log:
-        return
-    try:
-        dump_dir = _session_dump_dir()
-        from datetime import datetime, timezone
-        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        dump_file = dump_dir / f"session-{user_hash[:8]}-{ts}.txt"
-        dump_file.write_text("".join(session_log), encoding="utf-8")
-        print(f"[SYSTEM] Session saved → {dump_file.name}")
-    except Exception as e:
-        print(f"[WARN] Could not write session dump: {e}")
+    # Session data is already encrypted and saved to log-{user_hash}.enc
+    # on every turn. No plaintext dump is written.
+    pass
 
+
+# Module-level cache for the most recently decrypted session log
+_last_session_cache: str = ""
+
+def _set_last_session_cache(log_data: str) -> None:
+    """Cache the decrypted session log for load_last_session() to use."""
+    global _last_session_cache
+    _last_session_cache = log_data
 
 def load_last_session(user_hash: str, max_turns: int = 10) -> str:
     """
-    Load the most recent session-dump for this user and return the last
-    ``max_turns`` turn entries as a single string, ready to inject into
-    ``recent_history``.
+    Return the last ``max_turns`` turn entries from the encrypted session
+    log (log-{user_hash}.enc), which was already decrypted and cached
+    during startup via _set_last_session_cache().
 
-    Returns an empty string if no dump is found or loading fails.
+    Session data lives ONLY in the encrypted log file — no plaintext
+    dumps are written or read.
 
     Args:
-        user_hash:  Hex digest identifying the user.
+        user_hash:  Hex digest identifying the user (kept for API compat).
         max_turns:  Maximum number of past turns to restore (default 10).
+
+    Returns:
+        Formatted string of recent turns, or empty string if no log exists.
     """
-    try:
-        dump_dir = _session_dump_dir()
-        pattern = f"session-{user_hash[:8]}-*.txt"
-        dumps = sorted(dump_dir.glob(pattern))
-        if not dumps:
-            return ""
-        latest = dumps[-1]
-        text = latest.read_text(encoding="utf-8")
-        # Split on the blank-line separator between turns
-        turns = [t.strip() for t in text.split("\n\n") if t.strip()]
-        restored = "\n\n".join(turns[-max_turns:])
-        return restored
-    except Exception:
+    if not _last_session_cache:
         return ""
+    turns = [t.strip() for t in _last_session_cache.split("\n\n") if t.strip()]
+    restored = "\n\n".join(turns[-max_turns:])
+    return restored
 
 # ══════════════════
 # SECURITY UTILITIES
@@ -970,6 +948,8 @@ def main():
     else:
         log_data = ""
         new_user = True
+    # Cache decrypted log for load_last_session() to restore prior turns
+    _set_last_session_cache(log_data)
     if learned_file.exists():
         try:
             learned_data = decrypt_data(

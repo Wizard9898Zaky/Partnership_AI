@@ -72,24 +72,29 @@ all outbound responses skip Pass 1 (keyword) and Pass 2 (LLM) validation.
 
 ## `session`
 
-Controls session dump behavior on exit.
+Session data is stored **encrypted** in `user_logs/log-{user_hash}.enc` —
+written on every turn via `atomic_encrypt_write()` and restored on startup
+by decrypting the log file. No plaintext session dumps are written to disk.
+
+The `session` section in `config.json` is no longer used for dump settings
+(kept only for backward-compatibility notes).
 
 ```json
 "session": {
-    "dump_on_exit": true,
-    "dump_dir": "cr_logs/session_dumps"
+    "_note": "Session data is stored encrypted in user_logs/log-{user_hash}.enc. No plaintext dumps are written."
 }
 ```
 
-| Key | Type | Default | Effect |
-|---|---|---|---|
-| `dump_on_exit` | bool | `true` | If `true`, the entire session's turn log is written to a plaintext file in `dump_dir` when the program exits. If `false`, no session dump is created. |
-| `dump_dir` | string | `"cr_logs/session_dumps"` | Directory for session dump files. Created if it doesn't exist. Relative paths resolve from the project root. |
+**How session persistence works:**
+- **During the session:** Every turn is appended to `log_data` and atomically
+  encrypted + written to `log-{user_hash}.enc` via `atomic_encrypt_write()`.
+- **On startup:** The encrypted log is decrypted and the last 10 turns are
+  loaded into `recent_history` for context restoration.
+- **On exit:** The final turn is already saved to the encrypted log.
+  `save_session_dump()` is now a no-op stub (kept for backward compat).
 
-**Session dump file format:** `session-<user_hash[:8]>-<ISO timestamp>.txt`
-
-**Disabling (`"dump_on_exit": false`):** No session history is saved. If you
-crash or exit unexpectedly, the conversation is lost.
+**No plaintext copies exist anywhere.** The old `cr_logs/session_dumps/`
+directory is deprecated and can be safely deleted.
 
 ---
 
@@ -321,7 +326,7 @@ customizations.
 | See HTTP request logs | `logging.level` | `"DEBUG"` |
 | Minimal console output | `logging.level` | `"WARNING"` |
 | Disable all ethics checks | `ethics.enabled` | `false` |
-| Don't save session dumps | `session.dump_on_exit` | `false` |
+| _(session dumps removed)_ | — | encrypted in `log-{user_hash}.enc` |
 | Faster CR review (no tests) | `reviewer.run_full_test_suite_on_accept` | `false` |
 | Allow more steps per turn | `agent.max_plan_steps` | `20` (or higher) |
 | Allow more LLM calls per turn | `agent.max_llm_calls_per_turn` | `12` (or higher) |
