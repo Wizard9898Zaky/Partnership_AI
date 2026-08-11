@@ -1065,8 +1065,12 @@ def main():
 
             if agent_result is False:
                 # Pure conversation - no action was needed. Hand the
-                # user's own words straight to DialogueEngine.
-                response = dialogue_engine_instance.generate_response(user_input)
+                # user's own words straight to DialogueEngine, WITH
+                # session history so the LLM has real context instead
+                # of hallucinating past conversations.
+                response = dialogue_engine_instance.generate_response(
+                    user_input, session_history=recent_history
+                )
             elif isinstance(agent_result, str) and (
                 agent_result.startswith("🛑")
                 or agent_result == "⚠️ That response was blocked by ethics controls."
@@ -1081,7 +1085,9 @@ def main():
                 # it into the actual response the user sees (and runs
                 # its own self-reflection pass on it).
                 response = dialogue_engine_instance.generate_response(
-                    user_input, system_override=agent_result
+                    user_input,
+                    system_override=agent_result,
+                    session_history=recent_history,
                 )
             print(response)
 

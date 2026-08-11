@@ -157,6 +157,7 @@ class DialogueEngine:
         self,
         user_input: str,
         system_override: Optional[str] = None,
+        session_history: str = "",
     ) -> str:
         """
         Generate a response to user_input, then run synchronous self-reflection.
@@ -165,19 +166,11 @@ class DialogueEngine:
             user_input:      The user's message (or, for an action-overview
                              turn, still the user's original message -
                              system_override carries the factual overview
-                             # Enrich context with recent exchanges from MemoryEngine
-                             if hasattr(self, "memory") and self.memory and hasattr(self.memory, "get_recent_context"):
-                                 try:
-                                     recent = self.memory.get_recent_context(getattr(self, "user_id", "default"), limit=10)
-                                     if recent and not session_history:
-                                         session_history = "\n".join(
-                                             f"User: {ex.get(\"user\", \"\")}\nAI: {ex.get(\"ai\", \"\")}"
-                                             for ex in recent if isinstance(ex, dict)
-                                         )
-                                 except Exception:
-                                     pass  # Best-effort context enrichment
                              of what AdaptiveAgent did, as context).
             system_override: Optional system context prepended to the prompt.
+            session_history: Optional recent conversation context (formatted
+                             as plain text with USER:/AI: turns) to inject so
+                             the LLM knows what was discussed previously.
 
         Returns:
             Final response string (post-reflection).
@@ -186,6 +179,23 @@ class DialogueEngine:
 
         if system_override:
             context_blocks.insert(0, system_override)
+
+        # ── Inject session history into context ──────────────────────
+        # If session_history was passed in (from new_main_chat.py's
+        # recent_history), use it. Otherwise, fall back to MemoryEngine's
+        # recall_context() to pull recent exchanges.
+        if not session_history and self.memory and hasattr(self.memory, "recall_context"):
+            try:
+                session_history = self.memory.recall_context(
+                    getattr(self, "user_id", "default")
+                )
+            except Exception:
+                pass  # Best-effort context enrichment
+
+        if session_history and session_history.strip():
+            context_blocks.append(
+                f"Recent conversation history:\n{session_history}"
+            )
 
         # Inject relevant learned thoughts and user facts from memory
         try:
@@ -224,8 +234,29 @@ class DialogueEngine:
                 "Respond as Partnership_AI. Be natural, helpful, and thoughtful."
             )
         else:
+            # Anti-hallucination guard for conversation history:
+            # If session history is empty, tell the LLM NOT to fabricate
+            # past conversations. If history exists, tell it to ONLY
+            # reference what's in the history.
+            history_guard = ""
+            if session_history and session_history.strip():
+                history_guard = (
+                    "\n\nIMPORTANT: The conversation history above is your "
+                    "REAL prior conversation with this user. Reference ONLY "
+                    "what appears in that history. Do NOT fabricate, invent, "
+                    "or hallucinate topics, project names, or details that "
+                    "are not explicitly present in the history above."
+                )
+            else:
+                history_guard = (
+                    "\n\nIMPORTANT: You have NO prior conversation history "
+                    "with this user for this session. Do NOT fabricate, invent, "
+                    "or hallucinate any past conversations, projects, topics, "
+                    "or details. If the user asks what you were working on and "
+                    "no history is available, say so honestly."
+                )
             prompt = (
-                f"{context_section}\n\n"
+                f"{context_section}{history_guard}\n\n"
                 f"User said: {user_input}\n\n"
                 "Respond as Partnership_AI. Be natural, helpful, and thoughtful."
             )
