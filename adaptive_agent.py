@@ -507,6 +507,7 @@ class AdaptiveAgent:
         self.execution_history: List[Dict[str, Any]] = []
         self.self_analysis_history: List[SelfAnalysisReport] = []
         self._current_trace: Optional[TurnTrace] = None  # set per-turn in run()
+        self._last_trace: Optional[TurnTrace] = None  # last completed turn, for /trace
 
         # Agent-loop budget (best-practices #11: cap iterations/runtime/
         # cost per turn - previously unenforced entirely).
@@ -1078,6 +1079,7 @@ class AdaptiveAgent:
                     result.action_used, parameters, result.success, result.output,
                     (time.monotonic() - step_start) * 1000,
                     None if result.success else "execution_error",
+                    result_data=trace_result_data,
                 )
             if not result.success:
                 err = result.output or ""
@@ -1559,6 +1561,12 @@ Return ONLY JSON in this exact format:
             reasoning=(
                 f"Post-turn gap detector: response contained phrase {matched_phrase!r}, "
                 "indicating AI was unable to fulfil the user's request."
+                + (
+                    " SelfModel reports a matching capability already exists, so this is"
+                    " a soft gap — likely a prompt/planning issue rather than a missing"
+                    " capability."
+                    if soft_gap else ""
+                )
             ),
         )
         return True
@@ -2382,6 +2390,7 @@ Return ONLY JSON in this exact format:
                 logger.debug("Failed to finalise trace on error path: %s", _trace_err)
             return error_response
         finally:
+            self._last_trace = self._current_trace
             self._current_trace = None
 
 

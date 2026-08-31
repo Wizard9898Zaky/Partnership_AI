@@ -77,11 +77,7 @@ class TurnTrace:
         """Record a single LLM API call within this turn.
 
         Args:
-            model: The Groq model identifier used.
-            prompt_tokens: Tokens consumed by the prompt.
-            completion_tokens: Tokens in the completion.
-            cost_usd: Estimated cost in USD (0.0 if unknown).
-            duration_ms: Wall-clock time for the call in milliseconds.
+            usage: Token usage mapping with 'prompt_tokens' / 'completion_tokens'.
         """
         self.llm_calls += 1
         if usage:
@@ -106,13 +102,18 @@ class TurnTrace:
         )
 
     def record_step(self, action: str, parameters: Dict[str, Any], success: bool,
-                     output: str, duration_ms: float, error_type: Optional[str] = None) -> None:
+                     output: str, duration_ms: float, error_type: Optional[str] = None,
+                     result_data: Optional[Dict[str, Any]] = None) -> None:
         """Record a single action step executed during this turn.
 
         Args:
             action: The registered action name.
-            output: The action's return value (will be str-cast and truncated).
+            parameters: The kwargs the action was called with.
             success: Whether the action completed without error.
+            output: The action's return value (will be str-cast and truncated).
+            duration_ms: Wall-clock time for the step in milliseconds.
+            error_type: Short label for the failure mode, if any.
+            result_data: Structured ActionResult payload, when available.
         """
         self.steps.append({
             "action": action,
@@ -121,6 +122,7 @@ class TurnTrace:
             "output": (str(output) if output is not None else "")[:500],  # trimmed; cast to str first
             "duration_ms": round(duration_ms, 2),
             "error_type": error_type,
+            "result_data": result_data,
         })
 
     def record_replan(self) -> None:
@@ -134,7 +136,7 @@ class TurnTrace:
         """Record a budget enforcement event (step limit or LLM call limit hit).
 
         Args:
-            event_type: A short label such as 'step_limit' or 'llm_limit'.
+            message: Human-readable description of the budget event.
         """
         self.budget_events.append(message)
 
@@ -179,7 +181,7 @@ class TurnTrace:
                 cfg.get("trace_rotate_keep", 3),
             )
             with open(TRACE_PATH, "a", encoding="utf-8") as f:
-                f.write(json.dumps(record) + "\n")
+                f.write(json.dumps(record, default=str) + "\n")
         except Exception:
             pass  # tracing must never be the reason a real turn fails
         return record

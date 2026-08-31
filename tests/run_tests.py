@@ -2,18 +2,21 @@
 """
 Test runner for Partnership_AI.
 
-Preferred usage (if pytest is installed - it's in requirements.txt):
-    pytest tests/
+Running this script delegates to pytest when it is installed (it's in
+requirements.txt), because most of the suite relies on pytest fixtures
+(tmp_path, monkeypatch, ...) that only pytest can supply.
 
-This script is a dependency-free fallback that does the same basic
-job (discover tests/test_*.py, run every test_* function, report
-pass/fail) for environments where pytest isn't available yet - useful
-right after a fresh Termux install, before `pip install -r
-requirements.txt` has been run.
+When pytest is absent - e.g. right after a fresh Termux install, before
+`pip install -r requirements.txt` has been run - it falls back to a
+dependency-free runner that discovers tests/test_*.py and calls every
+zero-argument test_* function. Fixture-taking tests are reported as
+skipped there, not as failures.
 
 Also used internally by reviewer.py's pre-accept smoke test gate.
 """
 import importlib.util
+import inspect
+import subprocess
 import sys
 import types
 import traceback
@@ -43,9 +46,21 @@ if "groq_backend" not in sys.modules:
     sys.modules["groq_backend"] = _mock_groq_backend
 
 
+def _pytest_available() -> bool:
+    return importlib.util.find_spec("pytest") is not None
+
+
+def _requires_fixtures(fn) -> bool:
+    """True if fn declares parameters, i.e. it needs pytest fixtures."""
+    try:
+        return bool(inspect.signature(fn).parameters)
+    except (TypeError, ValueError):
+        return False
+
+
 def run_all(verbose: bool = True) -> tuple[int, int, list[str]]:
     """Returns (passed_count, failed_count, failure_messages)."""
-    total_passed, total_failed = 0, 0
+    total_passed, total_failed, total_skipped = 0, 0, 0
     failure_messages = []
 
     for test_file in sorted(TESTS_DIR.glob("test_*.py")):
@@ -70,6 +85,11 @@ def run_all(verbose: bool = True) -> tuple[int, int, list[str]]:
         if verbose:
             print(f"\n{test_file.name} ({len(test_fns)} tests)")
         for name, fn in test_fns:
+            if _requires_fixtures(fn):
+                total_skipped += 1
+                if verbose:
+                    print(f"  SKIP: {name} (needs pytest fixtures)")
+                continue
             try:
                 fn()
                 total_passed += 1
@@ -83,10 +103,18 @@ def run_all(verbose: bool = True) -> tuple[int, int, list[str]]:
                     print(f"  FAIL: {name}")
                     traceback.print_exc()
 
+    if verbose and total_skipped:
+        print(f"\n{total_skipped} test(s) skipped - install pytest to run them.")
     return total_passed, total_failed, failure_messages
 
 
 if __name__ == "__main__":
+    if _pytest_available():
+        sys.exit(subprocess.run(
+            [sys.executable, "-m", "pytest", str(TESTS_DIR), "-q"],
+            cwd=str(TESTS_DIR.parent),
+        ).returncode)
+
     passed, failed, failures = run_all(verbose=True)
     print(f"\n{'='*60}")
     print(f"{passed} passed, {failed} failed")

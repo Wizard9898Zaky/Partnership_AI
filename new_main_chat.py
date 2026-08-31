@@ -155,10 +155,13 @@ WHAT I CAN DO  (just talk to me naturally)
 """.format(action_count=action_count))
 
 
-def _print_status() -> None:
+def _print_status(user_id: str) -> None:
     """
     Print a live system snapshot: cache state, memory size, action count,
     session dump directory, and software versions.
+
+    Args:
+        user_id: Hex digest identifying the active user.
 
     Imported lazily so this function has zero startup cost.
     """
@@ -200,7 +203,7 @@ def _print_status() -> None:
     try:
         from conversation_engine.action_registry import _LIVE_MEMORY_ENGINE
         if _LIVE_MEMORY_ENGINE and hasattr(_LIVE_MEMORY_ENGINE, "list_memory_categories"):
-            cats = _LIVE_MEMORY_ENGINE.list_memory_categories(USER_ID)
+            cats = _LIVE_MEMORY_ENGINE.list_memory_categories(user_id)
             cat_line = f"  {len(cats)} categories: {', '.join(list(cats.keys())[:5])}"
         else:
             cat_line = "  (unavailable)"
@@ -243,16 +246,17 @@ Session Dumps
 
 
 
-def _print_trace() -> None:
+def _print_trace(agent: Any) -> None:
     """
     Print a trace of the last turn's execution — gate decision, plan steps,
     actions taken, and outcomes. Provides visibility into the agent's
     multi-step planning process.
 
-    Reads from the agent's _current_trace (TurnTrace) object.
+    Args:
+        agent: The live AdaptiveAgent whose most recent TurnTrace is read.
     """
     try:
-        trace = getattr(agent, "_current_trace", None)
+        trace = getattr(agent, "_current_trace", None) or getattr(agent, "_last_trace", None)
         if trace is None:
             print("No trace available yet. Send a message first.")
             return
@@ -277,7 +281,7 @@ def _print_trace() -> None:
             for i, step in enumerate(steps):
                 action = step.get("action", "?")
                 success = "✅" if step.get("success") else "❌"
-                elapsed = step.get("elapsed_ms", 0)
+                elapsed = step.get("duration_ms", 0)
                 error = step.get("error", "")
                 print(f"    {i+1}. {success} {action} ({elapsed:.0f}ms)")
                 if error:
@@ -289,14 +293,17 @@ def _print_trace() -> None:
         if replans:
             print(f"  Replans:      {replans}")
 
-        llm_calls = getattr(trace, "llm_calls", [])
+        llm_calls = getattr(trace, "llm_calls", 0)
         if llm_calls:
-            total_tokens = sum(c.get("total_tokens", 0) for c in llm_calls)
-            print(f"  LLM calls:    {len(llm_calls)} ({total_tokens} tokens)")
+            total_tokens = (
+                getattr(trace, "prompt_tokens", 0)
+                + getattr(trace, "completion_tokens", 0)
+            )
+            print(f"  LLM calls:    {llm_calls} ({total_tokens} tokens)")
 
         budget_events = getattr(trace, "budget_events", [])
         if budget_events:
-            print(f"  Budget events:")
+            print("  Budget events:")
             for ev in budget_events:
                 print(f"    - {ev[:100]}")
 
@@ -1034,10 +1041,10 @@ def main():
             _print_help()
             continue
         if user_input.lower() in {"/status", "/stat"}:
-            _print_status()
+            _print_status(USER_ID)
             continue
         if user_input.lower() in {"/trace", "/last"}:
-            _print_trace()
+            _print_trace(agent)
             continue
         if user_input.lower() in {"/plugins", "/plugin"}:
             _print_plugins()
